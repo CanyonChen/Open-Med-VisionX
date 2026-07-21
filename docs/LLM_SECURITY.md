@@ -69,7 +69,7 @@ class Transport:
     def stream(self, request: HttpRequest) -> Iterable[Mapping[str, Any]]: ...
 ```
 
-Tests use an in-memory transport or localhost mock server. CI never contacts a
+Tests use an in-memory transport or localhost mock server and never contact a
 real provider.
 
 ## Credential references
@@ -240,8 +240,7 @@ If a key is exposed:
 
 1. revoke or rotate it immediately;
 2. inspect provider audit and billing logs;
-3. remove it from the working tree, Git history, CI artifacts, logs, and
-   screenshots;
+3. remove it from the working tree, Git history, logs, and screenshots;
 4. strengthen tests and scanning without preserving the leaked value.
 
 If patient information is sent:
@@ -267,4 +266,4 @@ Use local mocks to cover:
 - rejection when vision capability or consent is absent;
 - provider/model/time/disclaimer footer for chat and streaming;
 - timeout and cancellation behavior;
-- confirmation that no real API is called in CI.
+- confirmation that no real API is called during tests.

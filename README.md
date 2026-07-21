@@ -1,6 +1,22 @@
-[简体中文](README.zh-CN.md)
+<p align="center">
+  <img src="figs/logo_full.png" alt="OpenMedVisionX" width="900">
+</p>
 
-# OpenMedVisionX: An Open Interactive Platform for Medical Computer Vision Learning and Exploration
+<p align="center">
+  <a href="docs/README.zh-CN.md">简体中文</a>
+</p>
+
+[![Python](https://img.shields.io/badge/Python-3.10+-blue.svg)](https://www.python.org/downloads/)
+[![PyQt5](https://img.shields.io/badge/PyQt5-5.15+-41CD52.svg)](https://pypi.org/project/PyQt5/)
+[![pydicom](https://img.shields.io/badge/pydicom-2.4+-f37626.svg)](https://pydicom.github.io/)
+[![SciPy](https://img.shields.io/badge/SciPy-1.11+-8CAAE6.svg)](https://scipy.org/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+# OpenMedVisionX
+
+An Open Interactive Platform for Medical Computer Vision Learning and Exploration
+
+---
 
 OpenMedVisionX is a local, GUI-driven teaching platform for medical imaging,
 computed-tomography reconstruction, and external computer-vision inference. It
@@ -118,7 +134,7 @@ Qt widget, model implementation, or provider adapter.
 
 ## Installation
 
-Python 3.10 or newer is required; CI currently validates Python 3.10–3.12.
+Python 3.10 or newer is required; supported versions are 3.10–3.12.
 
 ### Conda
 
@@ -311,7 +327,7 @@ Before contributing, run:
 python scripts/check_repository.py
 ```
 
-The same check runs in CI and rejects:
+The repository policy check rejects:
 
 - medical volumes and DICOM files, including files hidden behind a wrong
   extension when a known signature is detectable;
@@ -354,9 +370,6 @@ python -m pytest -q \
   tests/test_inference_execution.py::test_tiny_torchscript_runtime_when_pytorch_is_available
 ```
 
-CI keeps this heavyweight check in one CPU-only job, separate from the normal
-Python-version test matrix.
-
 Tests create small DICOM, NIfTI, raster, ONNX/TorchScript, and mock-provider
 fixtures at runtime in temporary directories. Do not add fixture images or
 weights to the repository.
@@ -376,7 +389,7 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for architecture and pull-request rules,
    detection, registration, reconstruction, restoration, generation,
    multimodal, WSI, temporal/4D, and anomaly tasks.
 6. Multi-provider LLM assistant, consent controls, and secure credentials.
-7. Automated testing, CI, plugin authoring guidance, and the first source-only
+7. Automated testing, plugin authoring guidance, and the first source-only
    release.
 
 ## License

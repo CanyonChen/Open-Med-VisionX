@@ -14,7 +14,7 @@ the first source release is tagged.
 - English and Simplified Chinese project documentation with architecture,
   format semantics, plugin/provider boundaries, and a staged roadmap.
 - MIT License, contribution guide, code of conduct, and security policy.
-- Repository policy checks and CI protection against medical files, archives,
+- Repository policy checks against medical files, archives,
   model weights, credentials, build products, executables, and oversized files.
 - Conda environment and command-line entry point both named `openmedvisionx`.
 - Unified raster/sequence/RAS+ volume domains; safe PNG/JPEG/TIFF, DICOM ZIP,

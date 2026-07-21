@@ -38,7 +38,7 @@ body:
         - Model plugin or inference
         - LLM provider
         - Background task or cancellation
-        - Packaging, documentation, or CI
+        - Packaging, documentation, or testing
         - Other
     validations:
       required: true

@@ -88,9 +88,9 @@ for adapter code, model definition, and weights separately.
 A Python adapter executes in a separate process but remains arbitrary code.
 Preserve the first-load warning, timeout, cancellation, and crash isolation.
 
-Provider tests use a local mock HTTP server. CI must never contact a real
-vendor, spend account credit, or require an API key. Redact credentials from
-errors, logs, test snapshots, and recorded requests.
+Provider tests use a local mock HTTP server. Automated tests must never contact
+a real vendor, spend account credit, or require an API key. Redact credentials
+from errors, logs, test snapshots, and recorded requests.
 
 ## Required checks
 
@@ -110,7 +110,7 @@ the check to make an unsafe fixture pass.
 ## Documentation
 
 `README.md` is the English primary page and links to
-`README.zh-CN.md`; the Chinese page links back. User-facing behavior,
+`docs/README.zh-CN.md`; the Chinese page links back. User-facing behavior,
 installation commands, safety controls, and public interfaces should remain
 consistent in both files.
 
@@ -126,7 +126,7 @@ A pull request should:
 - include focused tests;
 - note optional-dependency or license changes;
 - update documentation and the changelog when user-visible behavior changes;
-- pass repository policy and CI checks.
+- pass repository policy and test checks.
 
 By contributing, you agree that your contribution is licensed under the
 project's [MIT License](LICENSE).

@@ -42,8 +42,8 @@ If possible medical or patient data is exposed:
 1. Stop distribution and restrict access.
 2. Do not copy, inspect, or redistribute more data than needed to identify the
    affected object.
-3. Remove it from the working tree, Git history, releases, CI artifacts, and
-   mirrors under project control.
+3. Remove it from the working tree, Git history, releases, and mirrors under
+   project control.
 4. Notify the responsible data owner and follow applicable institutional and
    legal incident procedures.
 5. Replace any test dependency with a runtime-generated synthetic fixture.
@@ -67,7 +67,7 @@ Deleting a file in a later commit does not remove it from Git history.
 
 ## Repository policy
 
-Run `python scripts/check_repository.py` before every commit. CI repeats the
-check for medical formats and signatures, archives, model artifacts,
+Run `python scripts/check_repository.py` before every commit. The check rejects
+medical formats and signatures, archives, model artifacts,
 executables, likely secrets, forbidden build directories, and oversized files.
 Security checks reduce risk but do not prove that a file is anonymized or safe.

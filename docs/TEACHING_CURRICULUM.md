@@ -794,7 +794,7 @@ but its interpretation depends on model training and calibration.
 - Sending original DICOM/NIfTI, a whole series, or DICOM metadata.
 - Assuming a metadata-free PNG cannot contain burned-in identity text.
 - Treating cosine similarity or generated prose as clinical probability.
-- Running a real paid API in CI.
+- Running a real paid API during automated tests.
 
 ### Thinking questions
 
