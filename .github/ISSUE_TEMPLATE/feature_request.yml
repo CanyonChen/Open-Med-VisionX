@@ -1,0 +1,52 @@
+name: Feature request
+description: Propose a focused teaching, format, plugin, or safety improvement.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Explain the learning outcome and the public contract the feature should
+        use. Do not attach datasets, medical images, weights, or credentials.
+  - type: textarea
+    id: learning_problem
+    attributes:
+      label: Teaching or user problem
+      description: What should a student or researcher be able to understand or do?
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Primary architecture layer
+      options:
+        - Domain
+        - IO
+        - Algorithm
+        - Inference
+        - LLM
+        - Runtime
+        - Services
+        - UI
+        - Documentation or packaging
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: Include capability, data semantics, cancellation, and visualization expectations where relevant.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: textarea
+    id: safety
+    attributes:
+      label: Privacy, security, dependency, and license impact
+      description: State whether this changes data handling, cloud transfer, arbitrary code, optional dependencies, or third-party licensing.
+    validations:
+      required: true

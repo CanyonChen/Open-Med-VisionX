@@ -1,0 +1,11 @@
+# Keep the Conda environment aligned with the public distribution and command.
+name: openmedvisionx
+channels:
+  - conda
+dependencies:
+  - python=3.11
+  - pip>=24
+  - pip:
+      # Installs the base viewer from pyproject.toml. Add optional groups with
+      # pip install -e ".[nifti,onnx,llm,dev]" after creating the environment.
+      - -e .

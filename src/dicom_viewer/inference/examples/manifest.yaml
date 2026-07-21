@@ -1,0 +1,109 @@
+schema_version: "1.0"
+name: example-local-classifier
+version: "0.1.0"
+family: resnet
+source:
+  name: example-teaching-plugin
+  organization: local-user
+  repository: https://example.invalid/review-source-before-use
+  publication: null
+  model_id: resnet-example-v1
+description: >-
+  Contract-only example for OpenMedVisionX — An Open Interactive Platform for
+  Medical Computer Vision Learning and Exploration. It describes a user-supplied
+  local ONNX classifier; the project does not include the referenced model file
+  or any weights.
+tasks:
+  - classification
+subtasks:
+  - binary-classification
+license:
+  code: MIT
+  model: Apache-2.0
+  weights: user-supplied
+  notice: Verify every third-party license before loading the local model.
+  urls: {}
+runtime:
+  kind: onnx
+  device: auto
+  provider: null
+  options: {}
+entrypoint:
+  path: models/example_classifier.onnx
+weights:
+  - name: model
+    path: models/example_classifier.onnx
+    format: onnx
+    sha256: null
+    size_bytes: null
+    required: true
+    license: user-supplied
+inputs:
+  - name: image
+    semantic: image
+    modalities:
+      - generic-image
+    dimensionality: 2d
+    shape: [1, 3, 224, 224]
+    spacing:
+      required: false
+      values: null
+      unit: pixel
+      tolerance: null
+    preprocessing:
+      layout: nchw
+      color_space: rgb
+      channel_order: [R, G, B]
+      alpha_handling: drop
+      dtype: float32
+      value_range: [0, 255]
+      normalization:
+        scale: 0.00392156862745098
+        offset: 0.0
+        mean: [0.485, 0.456, 0.406]
+        std: [0.229, 0.224, 0.225]
+      spatial:
+        - operation: letterbox
+          size: [224, 224]
+          interpolation: bilinear
+          anchor: center
+          pad_value: [0, 0, 0]
+          allow_upscale: true
+      orientation: apply-exif
+    description: Canonically oriented RGB image.
+outputs:
+  - name: scores
+    semantic: class-scores
+    dtype: float32
+    shape: [1, 2]
+    coordinate_system: not-applicable
+    labels:
+      "0": negative
+      "1": positive
+    postprocessing:
+      activation: softmax
+      threshold: null
+      nms_iou_threshold: null
+      interpolation: null
+      discrete_labels: false
+      parameters: {}
+    uncertainty:
+      kind: none
+      description: No calibrated uncertainty is supplied by this example.
+      calibrated: false
+      units: null
+    description: Per-class scores in manifest label order.
+capabilities:
+  prompts: false
+  intermediate_features: false
+  attention: false
+  embeddings: false
+  multiscale_outputs: false
+  vector_fields: false
+  sampling_trajectory: false
+  multimodal_text: false
+  uncertainty: false
+authors:
+  - OpenMedVisionX contributors
+references: []
+extensions: {}

@@ -1,0 +1,78 @@
+name: Bug report
+description: Report a reproducible OpenMedVisionX defect using synthetic data only.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not upload DICOM, NIfTI, patient images, metadata, API keys, model
+        weights, or private logs. Reproduce the problem with a generated
+        phantom or other synthetic input. Report security and privacy issues
+        privately by following SECURITY.md.
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+      placeholder: "0.1.0 or commit hash"
+    validations:
+      required: true
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Operating system, Python version, installation extras, and relevant optional runtime.
+      placeholder: "Windows 11, Python 3.11, base+nifti"
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Image loading and metadata
+        - 2D viewer and measurement
+        - Volume geometry and multiplanar views
+        - CT reconstruction
+        - Model plugin or inference
+        - LLM provider
+        - Background task or cancellation
+        - Packaging, documentation, or CI
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction steps
+      description: Use only generated or synthetic inputs and include the smallest reproducible sequence.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Sanitized diagnostics
+      description: Remove paths, metadata, pixel data, credentials, and other private information.
+      render: text
+  - type: checkboxes
+    id: privacy
+    attributes:
+      label: Privacy confirmation
+      options:
+        - label: I used only synthetic data and removed credentials and private information.
+          required: true
+        - label: This is not a security or patient-data incident that should be reported privately.
+          required: true
