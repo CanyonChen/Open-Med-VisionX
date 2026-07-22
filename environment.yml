@@ -1,11 +1,16 @@
 # Keep the Conda environment aligned with the public distribution and command.
 name: openmedvisionx
 channels:
-  - conda
+  - conda-forge
+  - nodefaults
 dependencies:
   - python=3.11
   - pip>=24
   - pip:
       # Installs the base viewer from pyproject.toml. Add optional groups with
       # pip install -e ".[nifti,onnx,llm,dev]" after creating the environment.
+      # PyTorch is intentionally separate because the wheel must match the
+      # host. The tested RTX 4060 Laptop setup is documented in
+      # requirements/torch-cu130.txt; CPU/other CUDA hosts use PyTorch's
+      # platform-specific selector.
       - -e .

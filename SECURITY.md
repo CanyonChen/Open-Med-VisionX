@@ -1,5 +1,7 @@
 # OpenMedVisionX Security Policy
 
+[简体中文](docs/SECURITY.zh-CN.md)
+
 ## Supported versions
 
 This project is currently pre-1.0. Security fixes are applied to the latest
@@ -52,22 +54,34 @@ Deleting a file in a later commit does not remove it from Git history.
 
 ## Security boundaries
 
-- A Python model plugin is arbitrary code. A separate process and Conda
+- A Python model adapter is arbitrary code. A separate process and Conda
   environment improve fault isolation but are not a security sandbox.
-- Model files, plugins, and weights are untrusted until the user reviews their
-  source and licenses.
-- Cloud image transmission is disabled by default and requires revocable
-  per-provider consent.
-- Only a user-selected, previewed, metadata-stripped rendered slice may be sent
-  to a provider. Original DICOM/NIfTI, full series, and DICOM metadata are
-  prohibited.
+- Imported model files, adapters, and weights are untrusted until the user
+  reviews their source and licenses. The three bundled references and one
+  teaching sample follow a separate maintainer-reviewed allow-list with pinned
+  provenance, licenses, byte sizes, hashes, and an aggregate budget; that
+  review does not make their outputs clinically valid.
+- Network use and image attachment are disabled by default. An image additionally
+  requires a final review and one-request authorization bound to the exact
+  provider, endpoint, model, task, prompt, and PNG. A completed transfer cannot
+  be recalled.
+- Only the exact user-previewed, newly encoded rendered PNG may be sent to a
+  provider. Original DICOM/NIfTI, full series, source paths, and DICOM metadata
+  are not provider payloads.
 - Burned-in text can remain identifying even after metadata removal.
 - The application is not a medical device and is not suitable for clinical
   decisions.
 
-## Repository policy
+## Safe files and sharing
 
-Run `python scripts/check_repository.py` before every commit. The check rejects
-medical formats and signatures, archives, model artifacts,
-executables, likely secrets, forbidden build directories, and oversized files.
-Security checks reduce risk but do not prove that a file is anonymized or safe.
+- Keep patient data, credentials, user-supplied models, temporary files, and
+  exports outside the OpenMedVisionX source directory.
+- Do not upload a rejected input, crash artifact, screenshot, or experiment
+  record until you have inspected it for identifiers, secrets, private paths,
+  and restricted content.
+- The three reviewed model/golden bundles and public LoDoPaB-CT teaching sample
+  are the only documented binary-data exceptions in the source distribution.
+  Their presence does not authorize adding another model or dataset.
+- Filename removal, metadata filtering, hashing, and automated scanning reduce
+  risk but do not prove that a file or image has been anonymized or is safe to
+  share.

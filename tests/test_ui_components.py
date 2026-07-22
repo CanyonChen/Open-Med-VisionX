@@ -7,7 +7,7 @@ from PyQt5.QtCore import Qt, QUrl, QVariant
 from PyQt5.QtGui import QTextCursor, QTextDocument
 from PyQt5.QtWidgets import QLineEdit, QVBoxLayout, QWidget
 
-from dicom_viewer.ui.widgets import SafeMarkdownBrowser, SubmitPlainTextEdit
+from workbench.ui.widgets import SafeMarkdownBrowser, SubmitPlainTextEdit
 
 
 def test_safe_markdown_browser_renders_structured_bilingual_content(qtbot) -> None:

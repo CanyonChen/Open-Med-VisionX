@@ -1,1 +1,1 @@
-"""Tests generate all image fixtures at runtime; no medical data is committed."""
+"""Tests use generated fixtures plus the reviewed, deidentified teaching case."""

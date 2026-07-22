@@ -8,9 +8,9 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from dicom_viewer.domain import IntensitySemantics, RasterImage2D, SourceType
-from dicom_viewer.errors import OperationCancelled, ValidationError
-from dicom_viewer.services import (
+from workbench.domain import IntensitySemantics, RasterImage2D, SourceType
+from workbench.errors import OperationCancelled, ValidationError
+from workbench.services import (
     create_experiment_record,
     export_rendered_png,
     load_local_annotations,

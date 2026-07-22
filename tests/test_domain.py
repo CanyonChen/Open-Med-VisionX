@@ -4,7 +4,7 @@ import unittest
 
 import numpy as np
 
-from dicom_viewer.domain import (
+from workbench.domain import (
     Capability,
     ImageSequence2D,
     ImageVolume,
@@ -14,6 +14,7 @@ from dicom_viewer.domain import (
     SpacingSource,
     TransformRecord,
 )
+from workbench.errors import ValidationError
 
 
 class ImageDomainTests(unittest.TestCase):
@@ -93,6 +94,52 @@ class ImageDomainTests(unittest.TestCase):
         self.assertIn(Capability.HU_WINDOWING, volume.capabilities)
         self.assertIn(Capability.ORTHOGONAL_VIEWS, volume.capabilities)
         self.assertNotIn(Capability.VOLUME_RENDERING, volume.capabilities)
+
+    def test_unknown_and_arbitrary_signals_are_not_quantitative(self) -> None:
+        for semantics in (
+            IntensitySemantics.UNKNOWN,
+            IntensitySemantics.ARBITRARY_SIGNAL,
+        ):
+            with self.subTest(semantics=semantics):
+                image = ImageVolume(
+                    np.zeros((2, 3, 4), dtype=np.float32),
+                    SourceType.NIFTI,
+                    semantics,
+                )
+                self.assertFalse(image.has_explicit_quantitative_semantics)
+
+        probability = ImageVolume(
+            np.zeros((2, 3, 4), dtype=np.float32),
+            SourceType.NIFTI,
+            IntensitySemantics.PROBABILITY,
+        )
+        self.assertTrue(probability.has_explicit_quantitative_semantics)
+
+    def test_specific_intensity_semantics_validate_their_value_domain(self) -> None:
+        with self.assertRaisesRegex(ValidationError, "Probability images"):
+            ImageVolume(
+                np.full((2, 3, 4), 1.1 + 0.2j, dtype=np.complex64),
+                SourceType.NIFTI,
+                IntensitySemantics.PROBABILITY,
+            )
+        with self.assertRaisesRegex(ValidationError, "Discrete-label images"):
+            ImageVolume(
+                np.full((2, 3, 4), 0.5, dtype=np.float32),
+                SourceType.NIFTI,
+                IntensitySemantics.DISCRETE_LABEL,
+            )
+        with self.assertRaisesRegex(ValidationError, "SUV images"):
+            ImageVolume(
+                np.full((2, 3, 4), -0.1, dtype=np.float32),
+                SourceType.DICOM,
+                IntensitySemantics.SUV,
+            )
+        with self.assertRaisesRegex(ValidationError, "finite real-valued"):
+            ImageVolume(
+                np.full((2, 3, 4), np.nan, dtype=np.float32),
+                SourceType.DICOM,
+                IntensitySemantics.HOUNSFIELD_UNIT,
+            )
 
 
 class TransformRecordTests(unittest.TestCase):

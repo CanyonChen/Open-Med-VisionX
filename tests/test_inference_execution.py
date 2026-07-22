@@ -13,16 +13,16 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from dicom_viewer.domain.images import (
+from workbench.domain.images import (
     ColorSpace as ImageColorSpace,
 )
-from dicom_viewer.domain.images import (
+from workbench.domain.images import (
     IntensitySemantics,
     RasterImage2D,
     SourceType,
 )
-from dicom_viewer.domain.transforms import TransformRecord
-from dicom_viewer.inference import (
+from workbench.domain.transforms import TransformRecord
+from workbench.inference import (
     AlphaHandling,
     AnomalyDetectionResult,
     ClassificationResult,
@@ -60,7 +60,7 @@ from dicom_viewer.inference import (
     build_typed_result,
     prepare_input_2d,
 )
-from dicom_viewer.io import RasterImageLoader
+from workbench.io import RasterImageLoader
 
 
 def _postprocessing(

@@ -1,15 +1,18 @@
 include LICENSE
 include README.md
 include docs/README.zh-CN.md
-include CHANGELOG.md
-include CODE_OF_CONDUCT.md
-include CONTRIBUTING.md
 include SECURITY.md
 include environment.yml
 recursive-include figs *.png
 recursive-include docs *.md
-recursive-include src/dicom_viewer/inference/examples *.yaml
+recursive-include requirements *.txt
+include scripts/__init__.py
+recursive-include scripts/model_conversion *.py *.md
+recursive-include scripts/data_conversion *.py
+recursive-include src/workbench/inference/examples *.yaml
+recursive-include src/workbench/resources/model_bundles *.yaml *.md *.txt *.ts *.npz
+recursive-include src/workbench/resources/teaching_cases *.yaml *.md *.txt *.npz
 prune tests
-prune src/dicom_viewer/inference/tests
+prune src/workbench/inference/tests
 global-exclude *.py[cod]
 global-exclude __pycache__

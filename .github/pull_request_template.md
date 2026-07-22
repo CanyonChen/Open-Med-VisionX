@@ -14,7 +14,6 @@ addresses.
 List the exact checks you ran and their results.
 
 ```text
-python scripts/check_repository.py
 ruff check src tests scripts
 python -m pytest
 ```
@@ -24,9 +23,7 @@ python -m pytest
 - [ ] The change follows the Domain/IO/Algorithm/Inference/LLM/Runtime/Services/UI boundaries.
 - [ ] Slow work supports progress and cancellation without blocking the GUI.
 - [ ] Tests generate synthetic fixtures at runtime.
-- [ ] I did not add medical images, patient data, archives, model weights, executables, build output, or credentials.
+- [ ] I did not add medical images, patient data, archives, unreviewed model weights, executables, build output, or credentials. Any reviewed bundle change includes its fixed source revision, license evidence, size, SHA-256, model card, and integrity tests.
 - [ ] Model/plugin code and weight licenses are documented when applicable.
 - [ ] Cloud tests use a local mock and do not call a real provider.
 - [ ] User-visible behavior and public interfaces are documented in both languages.
-- [ ] `CHANGELOG.md` is updated when the change is notable.
-- [ ] The repository policy check passes.

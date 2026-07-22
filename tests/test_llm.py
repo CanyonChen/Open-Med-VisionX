@@ -5,6 +5,7 @@ import json
 import zlib
 from collections.abc import Iterable, Mapping
 from contextlib import suppress
+from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from threading import Event, Thread
 from time import monotonic
@@ -12,8 +13,8 @@ from typing import Any
 
 import pytest
 
-from dicom_viewer.errors import OperationCancelled, ProviderError, ValidationError
-from dicom_viewer.llm import (
+from workbench.errors import OperationCancelled, ProviderError, ValidationError
+from workbench.llm import (
     CLOUD_PREVIEW_PRIVACY_WARNING,
     AnthropicProvider,
     CloudTransferDenied,
@@ -26,8 +27,8 @@ from dicom_viewer.llm import (
     RenderedPreview,
     UrllibTransport,
 )
-from dicom_viewer.llm.transport import HttpRequest
-from dicom_viewer.runtime import BackgroundTask, CredentialResolver, TaskRunner
+from workbench.llm.transport import HttpRequest
+from workbench.runtime import BackgroundTask, CredentialResolver, TaskRunner
 
 
 class FakeTransport:
@@ -54,7 +55,13 @@ def _png_chunk(chunk_type: bytes, payload: bytes) -> bytes:
     return len(payload).to_bytes(4, "big") + chunk_type + payload + crc.to_bytes(4, "big")
 
 
-def _one_pixel_png(*, metadata: bool = False) -> bytes:
+def _one_pixel_png(
+    *,
+    metadata: bool = False,
+    rgba: bytes = b"\x00\x00\x00\xff",
+) -> bytes:
+    if len(rgba) != 4:
+        raise ValueError("rgba must contain exactly four bytes")
     signature = b"\x89PNG\r\n\x1a\n"
     header = (1).to_bytes(4, "big") + (1).to_bytes(4, "big") + bytes([8, 6, 0, 0, 0])
     chunks = [_png_chunk(b"IHDR", header)]
@@ -62,7 +69,7 @@ def _one_pixel_png(*, metadata: bool = False) -> bytes:
         chunks.append(_png_chunk(b"tEXt", b"PatientName\x00Alice"))
     chunks.extend(
         [
-            _png_chunk(b"IDAT", zlib.compress(b"\x00\x00\x00\x00\xff")),
+            _png_chunk(b"IDAT", zlib.compress(b"\x00" + rgba)),
             _png_chunk(b"IEND", b""),
         ]
     )
@@ -138,18 +145,108 @@ def test_preview_requires_validated_png_explicit_consent_and_vision() -> None:
     with pytest.raises(ValidationError):
         provider.chat("Raw bytes are forbidden", preview=_one_pixel_png())  # type: ignore[arg-type]
 
-    provider.authorize_image_transfer()
-    answer = provider.chat("Explain this rendered slice", preview=preview)
+    plan = provider.plan_image_transfer(
+        "Explain this rendered slice",
+        preview,
+        task="teaching-explanation",
+    )
+    assert plan.endpoint_host == "api.openai.com"
+    assert plan.total_bytes == len(preview.data)
+    assert plan.matches_preview(preview)
+    assert plan.items[0].transform
+    assert plan.items[0].deidentification_actions
+    assert "Original DICOM/NIfTI" in plan.items[0].deidentification_actions[0]
+    assert "Not automatically assessed" in plan.items[0].burned_in_text_review
+    with pytest.raises(ValidationError, match="at least one non-empty residual risk"):
+        replace(plan, residual_risks=())
+    provider.authorize_image_transfer(plan)
+    answer = provider.chat(
+        "Explain this rendered slice",
+        preview=preview,
+        transfer_plan=plan,
+    )
     content = transport.requests[-1].json_body["input"][0]["content"]
     assert content[1]["type"] == "input_image"
     assert content[1]["image_url"].startswith("data:image/png;base64,")
     assert answer.text == "Preview explanation"
 
+    with pytest.raises(CloudTransferDenied):
+        provider.chat(
+            "Explain this rendered slice",
+            preview=preview,
+            transfer_plan=plan,
+        )
+
     provider.revoke_image_transfer()
     with pytest.raises(CloudTransferDenied):
-        provider.chat("Explain this rendered slice", preview=preview)
+        provider.chat("Explain this rendered slice", preview=preview, transfer_plan=plan)
     assert "烧录" in CLOUD_PREVIEW_PRIVACY_WARNING
     assert "隐私" in CLOUD_PREVIEW_PRIVACY_WARNING
+
+
+def test_changed_prompt_or_preview_invalidates_consent_without_network_dispatch() -> None:
+    preview = RenderedPreview.from_png(_one_pixel_png())
+    changed_preview = RenderedPreview.from_png(_one_pixel_png(rgba=b"\xff\x00\x00\xff"))
+    transport = FakeTransport(response={"output_text": "must not be sent"})
+    provider = OpenAIProvider(
+        model_id="vision-model",
+        supports_vision=True,
+        transport=transport,
+        credential_resolver=CredentialResolver(environment={"OPENAI_API_KEY": "secret"}),
+    )
+    plan = provider.plan_image_transfer(
+        "Explain this preview",
+        preview,
+        task="teaching-explanation",
+    )
+
+    provider.authorize_image_transfer(plan)
+    with pytest.raises(CloudTransferDenied, match="prompt or preview changed"):
+        provider.chat("Changed prompt", preview=preview, transfer_plan=plan)
+    assert not provider.capabilities().image_transfer_authorized
+    assert transport.requests == []
+
+    provider.authorize_image_transfer(plan)
+    with pytest.raises(CloudTransferDenied, match="prompt or preview changed"):
+        provider.chat(
+            "Explain this preview",
+            preview=changed_preview,
+            transfer_plan=plan,
+        )
+    assert not provider.capabilities().image_transfer_authorized
+    assert transport.requests == []
+
+
+def test_changed_task_cannot_reuse_an_authorization() -> None:
+    preview = RenderedPreview.from_png(_one_pixel_png())
+    transport = FakeTransport(response={"output_text": "must not be sent"})
+    provider = OpenAIProvider(
+        model_id="vision-model",
+        supports_vision=True,
+        transport=transport,
+        credential_resolver=CredentialResolver(environment={"OPENAI_API_KEY": "secret"}),
+    )
+    reviewed = provider.plan_image_transfer(
+        "Inspect this preview",
+        preview,
+        task="teaching-explanation",
+    )
+    changed_task = provider.plan_image_transfer(
+        "Inspect this preview",
+        preview,
+        task="segmentation",
+    )
+
+    provider.authorize_image_transfer(reviewed)
+    with pytest.raises(CloudTransferDenied, match="different provider/model/task/payload"):
+        provider.chat(
+            "Inspect this preview",
+            preview=preview,
+            transfer_plan=changed_task,
+        )
+
+    assert not provider.capabilities().image_transfer_authorized
+    assert transport.requests == []
 
 
 def test_preview_rejects_png_metadata_chunks() -> None:
@@ -200,7 +297,10 @@ def test_revocation_during_request_build_prevents_preview_transfer() -> None:
 
         def resolve(self, _reference) -> str:
             assert self.provider is not None
-            self.provider.revoke_image_transfer()
+            revoker = Thread(target=self.provider.revoke_image_transfer)
+            revoker.start()
+            revoker.join(timeout=1.0)
+            assert not revoker.is_alive(), "revocation must not block behind request construction"
             return "openai-secret"
 
     resolver = RevokingResolver()
@@ -212,10 +312,16 @@ def test_revocation_during_request_build_prevents_preview_transfer() -> None:
         credential_resolver=resolver,  # type: ignore[arg-type]
     )
     resolver.provider = provider
-    provider.authorize_image_transfer()
+    preview = RenderedPreview.from_png(_one_pixel_png())
+    plan = provider.plan_image_transfer(
+        "Explain this preview",
+        preview,
+        task="teaching-explanation",
+    )
+    provider.authorize_image_transfer(plan)
 
-    with pytest.raises(CloudTransferDenied, match="revoked before sending"):
-        provider.chat("Explain this preview", preview=RenderedPreview.from_png(_one_pixel_png()))
+    with pytest.raises(CloudTransferDenied, match="revoked before network dispatch"):
+        provider.chat("Explain this preview", preview=preview, transfer_plan=plan)
 
     assert transport.requests == []
 
@@ -384,6 +490,28 @@ def test_generic_openai_compatible_provider_uses_user_endpoint_and_model() -> No
     assert request.json_body["model"] == "lab-model-v2"
     assert request.url == "http://localhost:8080/v1/chat/completions"
     assert answer.text == "Local answer"
+
+
+def test_loopback_openai_compatible_provider_can_explicitly_use_no_credential() -> None:
+    transport = FakeTransport(response={"choices": [{"message": {"content": "Local"}}]})
+    provider = OpenAICompatibleProvider(
+        provider_name="Local runtime",
+        model_id="local-model",
+        endpoint="http://127.0.0.1:8080/v1/chat/completions",
+        credential_ref="none",
+        transport=transport,
+    )
+
+    assert provider.chat("Explain locally.").text == "Local"
+    assert "Authorization" not in transport.requests[0].headers
+
+    with pytest.raises(ValidationError, match="loopback"):
+        OpenAICompatibleProvider(
+            provider_name="Remote runtime",
+            model_id="remote-model",
+            endpoint="https://example.com/v1/chat/completions",
+            credential_ref="none",
+        )
 
 
 def test_non_loopback_plain_http_endpoint_is_rejected() -> None:

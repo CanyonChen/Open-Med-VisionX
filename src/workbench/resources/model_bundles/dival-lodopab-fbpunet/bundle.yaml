@@ -1,0 +1,59 @@
+schema_version: 2
+bundle_id: dival-lodopab-fbpunet
+bundle_version: 1
+display_name: DIVal LoDoPaB FBP-U-Net
+display_name_zh: DIVal LoDoPaB FBP-U-Net 后处理模型
+description:
+  en: Fixed-geometry U-Net post-processing for a DIVal Hann-filtered LoDoPaB FBP reconstruction.
+  zh-CN: 面向 DIVal Hann 滤波 LoDoPaB FBP 重建结果的固定几何 U-Net 后处理模型。
+source:
+  official_repository: https://github.com/jleuschn/supp.dival
+  immutable_revision_or_release: 6117cabc55d223f5b62ea43d4a40225270fb6756
+  publication: https://doi.org/10.1038/s41597-021-00893-z
+  original_artifact_url: https://github.com/jleuschn/supp.dival/raw/6117cabc55d223f5b62ea43d4a40225270fb6756/reference_params/lodopab/lodopab_fbpunet.pt
+  original_size_bytes: 2485382
+  original_sha256: 990b366a5053485093e2b9876f1503d92fcd786b44f8970ca6f5d9e4c1dfdf23
+converted_artifact:
+  repository_path: weights.npz
+  format: numpy-npz-state-dict
+  size_bytes: 2318110
+  sha256: 8b18fd2a88355ddec043ae7c737ddf3321424e2ba52102869d3dbaf6bf68504c
+  converter_script: scripts/model_conversion/convert_dival_fbpunet.py
+  environment_lock: Python 3.11.15; PyTorch 2.13.0+cu130; DIVal architecture revision dd86f03733593dd6e226263aa1d3abec961c7881
+golden_reference:
+  repository_path: golden.npz
+  format: numpy-npz
+  size_bytes: 920732
+  sha256: 6789c93592ab6cfd3d4924e6d077ce8966d0e7fd7bb0b7f1a7305d66f742a3df
+  input_keys: [input.fbp]
+  output_keys: [output.reconstruction]
+  rtol: 0.002
+  atol: 0.002
+licenses:
+  code: MIT
+  weights: MIT at the pinned supplementary artifact revision
+  training_data_terms: LoDoPaB-CT dataset is CC BY 4.0 and is not included in this model bundle
+  redistribution_reviewed: true
+  reviewed_by: OpenMedVisionX maintainers
+  reviewed_on: "2026-07-21"
+  evidence_and_notice_paths:
+    - LICENSE.txt
+    - SOURCE_EVIDENCE.md
+    - NOTICE.md
+task_contract:
+  task: ct-reconstruction-postprocessing
+  modality_and_channel_order: [FBP image]
+  dimensionality: 2d
+  input_semantics: LoDoPaB parallel-beam sinogram reconstructed by the fixed Hann-filtered FBP pipeline, tensor shape 1x1x362x362
+  spacing_orientation_intensity: Dataset image coordinates and LoDoPaB normalized attenuation-image range; not clinical HU and not a scanner-native projection
+  labels_and_output_semantics: One-channel FBP post-processing reconstruction in the same fixed evaluation domain
+  preprocessing_postprocessing: Use the documented DIVal LoDoPaB FBP operator; do not independently auto-window input and output; no hidden resize
+resources:
+  cpu_supported: true
+  gpu_backend: PyTorch CUDA preferred with an explicit CPU fallback
+  tested_ram_vram: Validated on RTX 4060 Laptop 8 GiB and CPU for a 362x362 image
+  expected_runtime_cpu_gpu: Interactive on the tested GPU; CPU is supported and reports elapsed time
+intended_use: education-and-research-only
+training_domain_and_limitations: Learned post-processing for the LoDoPaB-CT benchmark; it does not accept clinical HU images or arbitrary scanner sinograms and is not a diagnostic model
+golden_tests:
+  - tests/test_bundled_models.py::test_packaged_cpu_golden_contract[dival-lodopab-fbpunet]

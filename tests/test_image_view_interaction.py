@@ -11,11 +11,12 @@ from PyQt5.QtWidgets import (
     QGraphicsEllipseItem,
     QGraphicsItem,
     QGraphicsLineItem,
+    QGraphicsPolygonItem,
     QGraphicsRectItem,
     QGraphicsSimpleTextItem,
 )
 
-from dicom_viewer.ui.image_view import ImageView
+from workbench.ui.image_view import ImageView
 
 
 def _wheel_event(angle_delta: QPoint) -> QWheelEvent:
@@ -133,11 +134,66 @@ def test_titles_labels_and_overlay_pens_remain_screen_stable(qtbot) -> None:
     assert isinstance(point_label, QGraphicsSimpleTextItem)
     assert point_label.flags() & QGraphicsItem.ItemIgnoresTransformations
 
+    view.set_polygon_overlays(
+        [np.array([[1, 1], [5, 1], [3, 6]], dtype=float)],
+        labels=["contour"],
+        colors=["#34D399"],
+    )
+    polygon, polygon_label = view._overlay_items[-2:]
+    assert isinstance(polygon, QGraphicsPolygonItem)
+    assert polygon.pen().isCosmetic()
+    assert isinstance(polygon_label, QGraphicsSimpleTextItem)
+    assert polygon_label.flags() & QGraphicsItem.ItemIgnoresTransformations
+
+    view.set_crosshair(3, 4)
+    vertical, horizontal = view._overlay_items[-2:]
+    assert isinstance(vertical, QGraphicsLineItem)
+    assert isinstance(horizontal, QGraphicsLineItem)
+    assert vertical.pen().isCosmetic()
+    assert horizontal.pen().isCosmetic()
+
     vector_field = np.zeros((8, 8, 2), dtype=float)
     view.set_vector_field_overlay(vector_field, max_vectors=1)
     vector = view._overlay_items[-1]
     assert isinstance(vector, QGraphicsLineItem)
     assert vector.pen().isCosmetic()
+
+
+def test_orientation_labels_are_explicit_and_restricted_to_patient_directions(qtbot) -> None:
+    view = ImageView()
+    qtbot.addWidget(view)
+
+    view.set_orientation_labels(("P", "R", "A", "L"))
+
+    assert view.orientation_labels == ("P", "R", "A", "L")
+    with pytest.raises(ValueError, match="top, right, bottom and left"):
+        view.set_orientation_labels(("L", "R"))  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="L/R/A/P/S/I"):
+        view.set_orientation_labels(("N", "R", "S", "L"))
+
+    view.set_orientation_labels(None)
+    assert view.orientation_labels is None
+
+
+def test_quantitative_value_scale_is_explicit_validated_and_dataset_scoped(qtbot) -> None:
+    view = ImageView()
+    qtbot.addWidget(view)
+    view.set_array(np.linspace(-1.0, 1.0, 64).reshape(8, 8))
+
+    view.set_value_scale(-1.0, 1.0, unit="normalized", diverging=True)
+
+    assert view.value_scale == (-1.0, 1.0, "normalized", True)
+    with pytest.raises(ValueError, match="strictly increasing"):
+        view.set_value_scale(1.0, 1.0)
+    with pytest.raises(ValueError, match="at most 24"):
+        view.set_value_scale(0.0, 1.0, unit="x" * 25)
+
+    view.set_array(np.zeros((8, 8)))
+    assert view.value_scale is None
+    view.set_value_scale(0.0, 1.0, unit=None)
+    assert view.value_scale == (0.0, 1.0, "", False)
+    view.clear_image()
+    assert view.value_scale is None
 
 
 def test_measurement_preview_uses_a_cosmetic_pen(qtbot) -> None:
@@ -193,12 +249,23 @@ def test_empty_view_keeps_title_and_non_empty_scene_rect_across_resize(qtbot) ->
 def test_accessible_description_tracks_language(qtbot) -> None:
     view = ImageView("Image")
     qtbot.addWidget(view)
-    assert view.accessibleDescription() == "Zoomable image view with pan and measurement tools"
+    assert view.accessibleDescription().startswith(
+        "Zoomable image view with pan and measurement tools"
+    )
+    assert "Use the page action above" in view.accessibleDescription()
+
+    view.set_array(np.ones((4, 4), dtype=np.uint8))
+    assert view.accessibleDescription() == ("Zoomable image view with pan and measurement tools")
 
     view.set_language("zh_CN")
 
     assert view.accessibleName() == "图像"
     assert view.accessibleDescription() == "支持平移、缩放和测量工具的图像视图"
 
+    view.clear_image()
+    assert "尚无影像" in view.accessibleDescription()
+
     view.set_language("en")
-    assert view.accessibleDescription() == "Zoomable image view with pan and measurement tools"
+    assert view.accessibleDescription().startswith(
+        "Zoomable image view with pan and measurement tools"
+    )

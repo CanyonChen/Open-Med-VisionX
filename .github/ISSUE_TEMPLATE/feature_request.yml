@@ -13,7 +13,7 @@ body:
     id: learning_problem
     attributes:
       label: Teaching or user problem
-      description: What should a student or researcher be able to understand or do?
+      description: What should a user or researcher be able to understand or do?
     validations:
       required: true
   - type: dropdown

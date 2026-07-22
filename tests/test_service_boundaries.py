@@ -7,7 +7,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from dicom_viewer.inference import (
+from workbench.inference import (
     EntrypointSpec,
     PluginContractError,
     PluginNotLoadedError,
@@ -16,8 +16,8 @@ from dicom_viewer.inference import (
     RuntimeSpec,
     load_manifest,
 )
-from dicom_viewer.runtime import CancellationToken
-from dicom_viewer.services import (
+from workbench.runtime import CancellationToken
+from workbench.services import (
     LLMProviderRegistry,
     ModelInferenceService,
     ProviderConfiguration,
@@ -28,12 +28,7 @@ from dicom_viewer.services import (
 
 def _example_manifest_path() -> Path:
     return (
-        Path(__file__).parents[1]
-        / "src"
-        / "dicom_viewer"
-        / "inference"
-        / "examples"
-        / "manifest.yaml"
+        Path(__file__).parents[1] / "src" / "workbench" / "inference" / "examples" / "manifest.yaml"
     )
 
 
@@ -151,16 +146,18 @@ def test_assistant_service_forwards_authorization_and_cancellation_token() -> No
         chat=Mock(return_value="response"),
     )
     service = TeachingAssistantService()
-    service.authorize_image_transfer(provider)  # type: ignore[arg-type]
+    plan = object()
+    service.authorize_image_transfer(provider, plan)  # type: ignore[arg-type]
     response = service.chat(
         provider,  # type: ignore[arg-type]
         "Explain the reconstruction.",
         cancellation_token=token,
     )
     assert response == "response"
-    provider.authorize_image_transfer.assert_called_once_with()
+    provider.authorize_image_transfer.assert_called_once_with(plan)
     provider.chat.assert_called_once_with(
         "Explain the reconstruction.",
         preview=None,
+        transfer_plan=None,
         cancellation_token=token,
     )

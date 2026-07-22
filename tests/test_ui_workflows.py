@@ -12,11 +12,11 @@ from PyQt5.QtCore import QUrl
 from PyQt5.QtGui import QDesktopServices, QTextDocument
 from PyQt5.QtWidgets import QMessageBox
 
-from dicom_viewer.domain import IntensitySemantics, RasterImage2D, SourceType
-from dicom_viewer.errors import OperationCancelled
-from dicom_viewer.llm import LLMResponse
-from dicom_viewer.services import LoadedStudy
-from dicom_viewer.ui.main_window import AssistantPage, ViewerPage
+from workbench.domain import IntensitySemantics, RasterImage2D, SourceType
+from workbench.errors import OperationCancelled
+from workbench.llm import LLMResponse
+from workbench.services import LoadedStudy
+from workbench.ui.main_window import AssistantPage, ViewerPage
 
 
 def _study(value: int) -> LoadedStudy:

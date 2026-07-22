@@ -6,13 +6,13 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-from dicom_viewer.domain import (
+from workbench.domain import (
     ImageVolume,
     IntensitySemantics,
     SourceType,
     resample_to_ras_grid,
 )
-from dicom_viewer.io import DicomLoader, NiftiLoader
+from workbench.io import DicomLoader, NiftiLoader
 
 _CYCLIC_DIRECTION_RAS = np.asarray(
     [

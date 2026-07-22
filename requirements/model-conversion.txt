@@ -1,0 +1,4 @@
+# Maintainer-only dependency for DeepInverse source-equivalence conversion.
+# Install one reviewed PyTorch runtime separately (torch-cpu.txt or torch-cu130.txt).
+numpy>=1.26,<2.2
+deepinv==0.4.1

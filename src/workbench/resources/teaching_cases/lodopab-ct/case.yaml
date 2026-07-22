@@ -1,0 +1,97 @@
+schema_version: 1
+case_id: lodopab-ct-test-03456
+case_version: 2
+display_name: LoDoPaB-CT minimal teaching case
+dataset:
+  name: LoDoPaB-CT
+  version: 1.0.0
+  doi: 10.5281/zenodo.3384092
+  publication: https://doi.org/10.1038/s41597-021-00893-z
+  creators:
+    - Leuschner, Johannes
+    - Schmidt, Maximilian
+    - Otero Baguer, Daniel
+artifact:
+  repository_path: sample.npz
+  format: safe-npz
+  size_bytes: 1912858
+  sha256: b323cdef2529927336069b3385605d1049117fe69e59583072861fa573493846
+  allowed_entries:
+    - fbp.npy
+    - ground_truth.npy
+    - metadata_json.npy
+    - observation.npy
+arrays:
+  observation:
+    shape: [1000, 513]
+    dtype: float32
+    sha256: b4f20f395d68e9755e0a250a78206351fee1a95b8c4f4ed4e236f40eb12b0be7
+    semantics: simulated low-dose parallel-beam line-integral data
+  fbp:
+    shape: [362, 362]
+    dtype: float32
+    sha256: 2fbfeb49fc11dc239c9c44226ddc2c611bf96c93b4b89f85d6d0fc61105f1b75
+    semantics: fixed DIVal FBP-U-Net input; normalized attenuation, not clinical HU
+    derivation:
+      implementation: astra_cuda
+      odl_version: 0.8.3
+      astra_toolbox_version: 2.5.0
+      padding: true
+      filter_type: Hann
+      frequency_scaling: 1.0
+      parameter_source: https://github.com/jleuschn/supp.dival/blob/6117cabc55d223f5b62ea43d4a40225270fb6756/reference_params/lodopab/lodopab_fbpunet_hyper_params.json
+  ground_truth:
+    shape: [362, 362]
+    dtype: float32
+    sha256: 24392e79235397cf3275588201ab67faf25401f5a9587c8bce8980e1e864aa0b
+    semantics: normalized attenuation image; not clinical HU
+source_members:
+  ground_truth:
+    archive_url: https://zenodo.org/records/3384092/files/ground_truth_test.zip?download=1
+    archive_size_bytes: 1582139537
+    archive_md5: ecc655767fbe3d40908ca823921f4c7f
+    member: ground_truth_test_027.hdf5
+    member_local_header_offset: 1538816654
+    member_compressed_size: 43320789
+    member_expanded_size: 56387960
+    member_crc32: 3edd9669
+    downloaded_range: 1538816710-1543011013
+    downloaded_size_bytes: 4194304
+    downloaded_sha256: 58d517b9cca643e2f9d8df3927752587998e415b9aa2a77f73ff02bf7feb9adf
+  observation:
+    archive_url: https://zenodo.org/records/3384092/files/observation_test.zip?download=1
+    archive_size_bytes: 2996574366
+    archive_md5: 9ae6b053bb1faa94d573311af8ec67b2
+    member: observation_test_027.hdf5
+    member_local_header_offset: 2914525943
+    member_compressed_size: 82046358
+    member_expanded_size: 221594744
+    member_crc32: be47200c
+    downloaded_range: 2914525998-2922914605
+    downloaded_size_bytes: 8388608
+    downloaded_sha256: 6379e14b597d244cdf10e7def44e7f14e9f0edb3c63ed325d96a819295e43c4e
+sample:
+  split: test
+  index: 3456
+  source_member_row: 0
+  transformations:
+    - selected member 027 row 0 (global test index 3456)
+    - cast both arrays to little-endian float32
+    - computed the fixed DIVal FBP-U-Net input with ODL 0.8.3 and ASTRA CUDA 2.5.0
+    - used a Hann filter, frequency_scaling 1.0, and padding
+    - stored canonical JSON metadata as a uint8 array
+license:
+  identifier: CC-BY-4.0
+  redistribution_reviewed: true
+  reviewed_on: "2026-07-21"
+  evidence_paths:
+    - LICENSE-CC-BY-4.0.txt
+    - NOTICE.md
+    - SOURCE_EVIDENCE.md
+privacy:
+  contains_patient_identifiers: false
+  contains_dicom_metadata: false
+  contains_source_paths: false
+intended_use: education-and-research-only
+limitations: This single public benchmark pair cannot establish model generalization or clinical validity.
+converter_script: scripts/data_conversion/extract_lodopab_sample.py

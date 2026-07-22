@@ -1,61 +1,160 @@
-# Python bytecode and caches
+# OpenMedVisionX handles medical images and machine-learning artifacts. These
+# rules reduce accidental staging; review new files carefully before committing.
+
+# Python bytecode, test caches, type-checker state, and coverage output
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.hypothesis/
+.tox/
+.nox/
+.pytype/
+.pyre/
+.pyright/
 .test-deps/
+.ipynb_checkpoints/
+__pypackages__/
+.dmypy.json
+dmypy.json
 .coverage
 .coverage.*
+coverage.xml
+coverage.json
+lcov.info
 htmlcov/
+test-results/
+.benchmarks/
 
-# Virtual environments and local tooling
-.venv/
-venv/
-env/
-.env
-.env.*
-!.env.example
-.idea/
-.vscode/
+# Local visual-QA captures and partial downloads
+/.tmp_*.png
+/.tmp_*.jpg
+/.tmp_*.jpeg
+/.tmp_*.webp
+*.download
+ground_truth.prefix
+observation.prefix
+
+# Virtual environments and local dependency tooling (repository root only)
+/.venv/
+/venv/
+/env/
+/ENV/
+/.conda/
+/conda-bld/
+
+# Editors, IDEs, Qt user settings, and temporary files
+/.idea/
+/.vscode/
+/.vs/
+/.fleet/
 *.code-workspace
+*.iml
+*.swp
+*.swo
+*.bak
+*.orig
+*~
+*.tmp
+*.temp
+*.pro.user
+*.pro.user.*
+CMakeLists.txt.user
+CMakeLists.txt.user.*
+.qmake.stash
 
-# Packaging and executable artifacts
+# Operating-system metadata
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Packaging, Conda packages, wheels, and compiled artifacts
 build/
 dist/
+sdist/
 *.egg-info/
 .eggs/
+*.egg
+*.whl
+*.conda
+wheelhouse/
+wheels/
+pip-wheel-metadata/
 *.exe
 *.msi
 *.dll
 *.pyd
 *.so
 *.dylib
+*.o
+*.obj
+*.a
+*.lib
+*.class
+*.dmp
 
-# Medical images and archives must never be committed
+# Medical images and local datasets must never be committed. Raster formats
+# are not ignored globally because the repository intentionally ships logos
+# and reviewed documentation images.
+DICOMDIR
+dicomdir
 *.dcm
 *.dicom
+*.dcm.gz
+*.ima
 *.nii
 *.nii.gz
 *.mha
 *.mhd
 *.nrrd
 *.nhdr
+*.hdr
+*.img
+/data/
+/datasets/
+/local-data/
+/local_data/
+/patient-data/
+/patient_data/
+/private-data/
+/private_data/
+
+# Archives and compressed payloads
 *.zip
 *.rar
 *.7z
 *.tar
+*.tar.*
 *.tgz
+*.tbz
+*.tbz2
+*.txz
+*.gz
+*.bz2
+*.xz
+*.zst
+*.cab
+*.iso
 
-# Model weights, serialized models, and accelerator engines
+# Model weights, serialized objects, numeric arrays, and accelerator engines
 *.pth
 *.pt
 *.ckpt
 *.safetensors
 *.onnx
+*.ort
 *.torchscript
+*.jit
 *.weights
+*.keras
+*.mar
 *.h5
 *.hdf5
 *.pb
@@ -63,27 +162,96 @@ dist/
 *.engine
 *.plan
 *.trt
+*.caffemodel
+*.pdmodel
+*.pdparams
+*.gguf
+*.ggml
+*.bin
 *.joblib
 *.pkl
+*.pickle
+*.dill
+*.npy
+*.npz
+/models/
+/weights/
+/checkpoints/
+/downloads/
 
-# Credentials and private keys
+# Exact reviewed bundled assets. Add future exceptions one file at a time only
+# after recording provenance, license, byte size, SHA-256, and integrity tests.
+!/src/workbench/resources/model_bundles/deepinv-mri-modl/weights.npz
+!/src/workbench/resources/model_bundles/deepinv-mri-modl/golden.npz
+!/src/workbench/resources/model_bundles/dival-lodopab-fbpunet/weights.npz
+!/src/workbench/resources/model_bundles/dival-lodopab-fbpunet/golden.npz
+!/src/workbench/resources/model_bundles/monai-brats-segmentation/model.ts
+!/src/workbench/resources/model_bundles/monai-brats-segmentation/golden.npz
+!/src/workbench/resources/teaching_cases/lodopab-ct/sample.npz
+
+# Credentials, tokens, private keys, and local environment files
+.env
+.env.*
+*.env
+.envrc
+.direnv/
+!.env.example
+!.env.sample
+!.env.template
+!example.env
+!*.example.env
 api_keys.*
 api-keys.*
 apikeys.*
-credentials*.json
-secrets*.json
+*credentials*.json
+*credentials*.yaml
+*credentials*.yml
+*secrets*.json
+*secrets*.yaml
+*secrets*.yml
 .secrets.*
+.netrc
+_netrc
+.pypirc
+id_dsa
+id_ecdsa
+id_ed25519
+id_rsa
 *.pem
 *.key
 *.p12
 *.pfx
+*.jks
+*.keystore
+*.kdbx
 
-# User-selected exports, logs, and runtime state
-exports/
-output/
-outputs/
-logs/
+# User-selected exports, logs, databases, and application runtime state. These
+# directories are root-anchored so a legitimate source package is not hidden.
+/exports/
+/output/
+/outputs/
+/results/
+/runs/
+/artifacts/
+/logs/
+/tmp/
+/temp/
+/.openmedvisionx/
+/openmedvisionx-*.png
+/openmedvisionx-*.json
+/openmedvisionx-*.yaml
+/openmedvisionx-*.yml
 *.log
+*.log.*
 *.sqlite
+*.sqlite3
+*.sqlite-journal
+*.sqlite-wal
+*.sqlite-shm
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
 *.db
-.openmedvisionx/
+*.db-journal
+*.db-wal
+*.db-shm

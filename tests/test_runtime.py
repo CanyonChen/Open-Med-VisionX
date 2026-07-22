@@ -6,8 +6,8 @@ from threading import Event
 
 import pytest
 
-from dicom_viewer.errors import OperationCancelled, ValidationError
-from dicom_viewer.runtime import (
+from workbench.errors import OperationCancelled, ValidationError
+from workbench.runtime import (
     REDACTED,
     AtomicSessionState,
     CredentialReference,
@@ -70,6 +70,29 @@ def test_task_runner_cancels_cooperatively() -> None:
     assert task.status is TaskStatus.CANCELLED
     assert task.cancelled
     assert not task.cancel()
+
+
+def test_task_cancellation_is_too_late_after_irreversible_commit_boundary() -> None:
+    commit_phase_entered = Event()
+    release_commit = Event()
+
+    def work(context) -> str:
+        context.enter_commit_phase()
+        commit_phase_entered.set()
+        if not release_commit.wait(2):
+            raise TimeoutError("test did not release commit phase")
+        return "committed"
+
+    with TaskRunner(max_workers=1) as runner:
+        task = runner.submit(work)
+        assert commit_phase_entered.wait(1)
+        try:
+            assert not task.cancel()
+        finally:
+            release_commit.set()
+        assert task.result(timeout=2) == "committed"
+
+    assert task.status is TaskStatus.SUCCEEDED
 
 
 def test_task_failure_is_preserved_for_result() -> None:

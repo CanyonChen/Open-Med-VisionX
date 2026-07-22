@@ -16,9 +16,9 @@ try:
 except ImportError:  # pragma: no cover - skip in minimal environment
     pydicom = None
 
-from dicom_viewer.domain import IntensitySemantics
-from dicom_viewer.errors import DecodeError, ResourceLimitError
-from dicom_viewer.io import DicomLoader, LoadLimits
+from workbench.domain import IntensitySemantics
+from workbench.errors import DecodeError, ResourceLimitError
+from workbench.io import DicomLoader, LoadLimits
 
 
 @unittest.skipIf(pydicom is None, "pydicom is not installed")
@@ -41,6 +41,10 @@ class DicomLoaderTests(unittest.TestCase):
         orientation: tuple[float, ...] = (0, 1, 0, 0, 0, 1),
         frame_of_reference_uid: str | None = None,
         photometric: str = "MONOCHROME2",
+        modality: str = "CT",
+        series_uid: str | None = None,
+        intensity_tags: dict[str, object] | None = None,
+        include_rescale: bool = True,
     ) -> Path:
         meta = FileMetaDataset()
         meta.MediaStorageSOPClassUID = CTImageStorage
@@ -51,9 +55,9 @@ class DicomLoaderTests(unittest.TestCase):
         dataset = FileDataset(str(path), {}, file_meta=meta, preamble=b"\0" * 128)
         dataset.SOPClassUID = CTImageStorage
         dataset.SOPInstanceUID = meta.MediaStorageSOPInstanceUID
-        dataset.SeriesInstanceUID = self.series_uid
+        dataset.SeriesInstanceUID = series_uid or self.series_uid
         dataset.FrameOfReferenceUID = frame_of_reference_uid or self.frame_of_reference_uid
-        dataset.Modality = "CT"
+        dataset.Modality = modality
         dataset.PatientName = "runtime-only"
         dataset.PatientID = "runtime-only"
         dataset.Rows = 2
@@ -70,8 +74,11 @@ class DicomLoaderTests(unittest.TestCase):
         dataset.ImagePositionPatient = [position_x, 10, 20]
         dataset.PixelSpacing = [0.75, 0.5]
         dataset.SliceThickness = 2.5
-        dataset.RescaleSlope = 2
-        dataset.RescaleIntercept = -1024
+        if include_rescale:
+            dataset.RescaleSlope = 2
+            dataset.RescaleIntercept = -1024
+        for keyword, value in (intensity_tags or {}).items():
+            setattr(dataset, keyword, value)
         dataset.InstanceNumber = int(position_x / 2.5) + 1
         dataset.PixelData = np.full((2, 3), stored_value, dtype=np.int16).tobytes()
         save_options = (
@@ -94,6 +101,135 @@ class DicomLoaderTests(unittest.TestCase):
         np.testing.assert_allclose(volume.origin, (0.0, -10.0, 20.0))
         self.assertNotIn("PatientName", volume.runtime_metadata)
         self.assertFalse(volume.runtime_metadata["display_inverted"])
+
+    def test_non_ct_dicom_is_not_silently_called_quantitative(self) -> None:
+        self._write_slice("mr.dcm", 0.0, 20, modality="MR")
+
+        volume = DicomLoader().load(self.directory)
+
+        self.assertEqual(volume.modality, "MR")
+        self.assertEqual(volume.intensity_semantics, IntensitySemantics.ARBITRARY_SIGNAL)
+        self.assertFalse(volume.has_explicit_quantitative_semantics)
+
+    def test_ct_without_modality_lut_is_not_assumed_to_be_hu(self) -> None:
+        self._write_slice("ct-unknown.dcm", 0.0, 20, include_rescale=False)
+
+        volume = DicomLoader().load(self.directory)
+
+        self.assertEqual(volume.intensity_semantics, IntensitySemantics.UNKNOWN)
+        self.assertEqual(
+            volume.runtime_metadata["intensity_semantics_source"],
+            "dicom_ct_modality_lut_missing",
+        )
+
+    def test_ct_with_explicit_non_hu_rescale_type_is_unknown(self) -> None:
+        self._write_slice(
+            "ct-unspecified.dcm",
+            0.0,
+            20,
+            intensity_tags={"RescaleType": "US"},
+        )
+
+        volume = DicomLoader().load(self.directory)
+
+        self.assertEqual(volume.intensity_semantics, IntensitySemantics.UNKNOWN)
+        self.assertEqual(
+            volume.runtime_metadata["intensity_semantics_source"],
+            "dicom_ct_non_hu_rescale_type",
+        )
+
+    def test_pet_without_complete_unit_and_correction_evidence_is_unknown(self) -> None:
+        self._write_slice(
+            "pet-unknown.dcm",
+            0.0,
+            20,
+            modality="PT",
+            intensity_tags={"Units": "GML", "RescaleSlope": 1, "RescaleIntercept": 0},
+        )
+        incomplete = DicomLoader().load(self.directory)
+        self.assertEqual(incomplete.intensity_semantics, IntensitySemantics.UNKNOWN)
+
+    def test_pet_with_complete_unit_and_correction_evidence_is_suv(self) -> None:
+        self._write_slice(
+            "pet-suv.dcm",
+            0.0,
+            20,
+            modality="PT",
+            intensity_tags={
+                "Units": "GML",
+                "SUVType": "BW",
+                "DecayCorrection": "START",
+                "CorrectedImage": ["ATTN", "DECY"],
+                "RescaleSlope": 1,
+                "RescaleIntercept": 0,
+            },
+        )
+        complete = DicomLoader().load(self.directory)
+        self.assertEqual(complete.intensity_semantics, IntensitySemantics.SUV)
+
+    def test_pet_gml_without_suv_type_uses_the_dicom_bw_default(self) -> None:
+        self._write_slice(
+            "pet-suv-default-bw.dcm",
+            0.0,
+            20,
+            modality="PT",
+            intensity_tags={
+                "Units": "GML",
+                "DecayCorrection": "START",
+                "CorrectedImage": ["ATTN", "DECY"],
+                "RescaleSlope": 1,
+                "RescaleIntercept": 0,
+            },
+        )
+
+        volume = DicomLoader().load(self.directory)
+
+        self.assertEqual(volume.intensity_semantics, IntensitySemantics.SUV)
+
+    def test_pet_invalid_suv_type_or_missing_modality_lut_stays_unknown(self) -> None:
+        self._write_slice(
+            "pet-invalid-type.dcm",
+            0.0,
+            20,
+            modality="PT",
+            intensity_tags={
+                "Units": "GML",
+                "SUVType": "INVALID",
+                "DecayCorrection": "START",
+                "CorrectedImage": ["ATTN", "DECY"],
+                "RescaleSlope": 1,
+                "RescaleIntercept": 0,
+            },
+        )
+        invalid_type = DicomLoader().load(self.directory)
+        self.assertEqual(invalid_type.intensity_semantics, IntensitySemantics.UNKNOWN)
+
+        (self.directory / "pet-invalid-type.dcm").unlink()
+        self._write_slice(
+            "pet-no-lut.dcm",
+            0.0,
+            20,
+            modality="PT",
+            include_rescale=False,
+            intensity_tags={
+                "Units": "GML",
+                "DecayCorrection": "START",
+                "CorrectedImage": ["ATTN", "DECY"],
+            },
+        )
+        missing_lut = DicomLoader().load(self.directory)
+        self.assertEqual(missing_lut.intensity_semantics, IntensitySemantics.UNKNOWN)
+
+    def test_rescale_overflow_is_rejected_instead_of_creating_nonfinite_volume(self) -> None:
+        self._write_slice(
+            "overflow.dcm",
+            0.0,
+            20,
+            intensity_tags={"RescaleSlope": 1e308, "RescaleIntercept": 0},
+        )
+
+        with self.assertRaisesRegex(DecodeError, "non-finite"):
+            DicomLoader().load(self.directory)
 
     def test_single_file_byte_limit_is_enforced_before_decode(self) -> None:
         path = self._write_slice("large.dcm", 0.0, 1)
@@ -148,6 +284,21 @@ class DicomLoaderTests(unittest.TestCase):
             orientation=(1, 0, 0, 0, 0, 1),
         )
         with self.assertRaisesRegex(DecodeError, "inconsistent ImageOrientationPatient"):
+            DicomLoader().load(self.directory)
+
+    def test_multiple_series_are_rejected_instead_of_silently_guessing(self) -> None:
+        self._write_slice("series-a.dcm", 0.0, 1)
+        self._write_slice(
+            "series-b.dcm",
+            2.5,
+            2,
+            series_uid=generate_uid(),
+        )
+
+        with self.assertRaisesRegex(
+            DecodeError,
+            "no series was selected.*will not guess",
+        ):
             DicomLoader().load(self.directory)
 
     def test_inconsistent_frame_of_reference_is_rejected(self) -> None:

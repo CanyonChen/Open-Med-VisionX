@@ -8,9 +8,9 @@ from unittest.mock import patch
 import numpy as np
 from PIL import Image
 
-from dicom_viewer.domain import ColorSpace, ImageSequence2D, RasterImage2D
-from dicom_viewer.errors import DecodeError, FormatMismatchError, ResourceLimitError
-from dicom_viewer.io import LoadLimits, RasterImageLoader
+from workbench.domain import ColorSpace, ImageSequence2D, RasterImage2D
+from workbench.errors import DecodeError, FormatMismatchError, ResourceLimitError
+from workbench.io import LoadLimits, RasterImageLoader
 
 
 class RasterLoaderTests(unittest.TestCase):
@@ -98,7 +98,7 @@ class RasterLoaderTests(unittest.TestCase):
 
             with (
                 patch(
-                    "dicom_viewer.io.raster.np.asarray",
+                    "workbench.io.raster.np.asarray",
                     side_effect=AssertionError("array materialization must not occur"),
                 ) as asarray,
                 patch.object(
@@ -122,7 +122,7 @@ class RasterLoaderTests(unittest.TestCase):
 
             with (
                 patch(
-                    "dicom_viewer.io.raster.np.asarray",
+                    "workbench.io.raster.np.asarray",
                     side_effect=AssertionError("array materialization must not occur"),
                 ) as asarray,
                 patch.object(

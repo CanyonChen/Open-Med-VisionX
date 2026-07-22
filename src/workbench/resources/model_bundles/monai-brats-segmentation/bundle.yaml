@@ -1,0 +1,59 @@
+schema_version: 2
+bundle_id: monai-brats-segmentation
+bundle_version: 1
+display_name: MONAI BraTS 3D Segmentation
+display_name_zh: MONAI BraTS 三维分割模型
+description:
+  en: Four-modality 3D MRI patch segmentation with explicit WT, TC, and ET output semantics.
+  zh-CN: 具有明确 WT、TC、ET 输出语义的四模态三维 MRI 分块分割模型。
+source:
+  official_repository: https://huggingface.co/MONAI/brats_mri_segmentation
+  immutable_revision_or_release: 370f7f9d062745fbac445e7fe6d6616d35df04ec
+  publication: https://arxiv.org/abs/1810.11654
+  original_artifact_url: https://huggingface.co/MONAI/brats_mri_segmentation/resolve/370f7f9d062745fbac445e7fe6d6616d35df04ec/models/model.ts
+  original_size_bytes: 18911784
+  original_sha256: 729980a0bd9347bf2397701eb329e12517918dc282a2d09c40458e95b24ceed9
+converted_artifact:
+  repository_path: model.ts
+  format: torchscript
+  size_bytes: 18911784
+  sha256: 729980a0bd9347bf2397701eb329e12517918dc282a2d09c40458e95b24ceed9
+  converter_script: scripts/model_conversion/verify_monai_torchscript.py
+  environment_lock: Python 3.11.15; PyTorch 2.13.0+cu130
+golden_reference:
+  repository_path: golden.npz
+  format: numpy-npz
+  size_bytes: 330439
+  sha256: d7982ada82f56b28615ed6ad170641ee1f3f0cb6a819285598c0380efa957e45
+  input_keys: [input.modalities]
+  output_keys: [output.logits]
+  rtol: 0.002
+  atol: 0.001
+licenses:
+  code: Apache-2.0
+  weights: Apache-2.0 bundle license at the pinned artifact revision
+  training_data_terms: BraTS 2018 challenge terms; training data and BraTS cases are not redistributed
+  redistribution_reviewed: true
+  reviewed_by: OpenMedVisionX maintainers
+  reviewed_on: "2026-07-21"
+  evidence_and_notice_paths:
+    - LICENSE.txt
+    - DATA_LICENSE.txt
+    - NOTICE.md
+task_contract:
+  task: segmentation
+  modality_and_channel_order: [T1ce, T1, T2, FLAIR]
+  dimensionality: 3d
+  input_semantics: Four co-registered MRI volumes, tensor shape Bx4xDxHxW
+  spacing_orientation_intensity: RAS+, aligned 1 mm volumes; normalize each channel over nonzero voxels
+  labels_and_output_semantics: Native sigmoid logits are TC, WT, ET; product adapters reorder to WT, TC, ET and threshold explicitly
+  preprocessing_postprocessing: No hidden resampling; channel-wise nonzero z-score normalization; sigmoid then visible threshold; map result back with the source affine
+resources:
+  cpu_supported: true
+  gpu_backend: PyTorch CUDA preferred with an explicit CPU fallback
+  tested_ram_vram: Validated on RTX 4060 Laptop 8 GiB; patch size must be selected to fit available memory
+  expected_runtime_cpu_gpu: GPU is recommended for 3D patches; CPU is supported but substantially slower and progress must remain visible
+intended_use: education-and-research-only
+training_domain_and_limitations: Trained on BraTS 2018 glioma MRI; not externally validated for clinical use, other diseases, scanners, or BraTS 2021 Task 1
+golden_tests:
+  - tests/test_bundled_models.py::test_packaged_cpu_golden_contract[monai-brats-segmentation]

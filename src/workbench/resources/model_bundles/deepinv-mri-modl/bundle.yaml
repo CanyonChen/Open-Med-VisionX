@@ -1,0 +1,59 @@
+schema_version: 2
+bundle_id: deepinv-mri-modl
+bundle_version: 1
+display_name: DeepInverse MRI MoDL Teaching Model
+display_name_zh: DeepInverse MRI MoDL 教学模型
+description:
+  en: Two-iteration MoDL reconstruction for exploring single-coil MRI undersampling and learned data consistency.
+  zh-CN: 用于探索单线圈 MRI 欠采样与学习型数据一致性的两次迭代 MoDL 重建模型。
+source:
+  official_repository: https://huggingface.co/deepinv/demo
+  immutable_revision_or_release: 35ef1ffedb3c8973721754a5f2bd1ca1a36added
+  publication: https://deepinv.github.io/deepinv/auto_examples/physics/demo_mri_tour.html
+  original_artifact_url: https://huggingface.co/deepinv/demo/resolve/35ef1ffedb3c8973721754a5f2bd1ca1a36added/demo_tour_mri.pth
+  original_size_bytes: 38274
+  original_sha256: e756b303917babeca8c32896597c9e4989fdd6a9792de3a79e9965f1f5cdbaff
+converted_artifact:
+  repository_path: weights.npz
+  format: numpy-npz-state-dict
+  size_bytes: 9929
+  sha256: 702658708828d13135228e32fef980ba1048e200f5c2fa4ebf54fa12d653f8ab
+  converter_script: scripts/model_conversion/convert_deepinv_mri.py
+  environment_lock: Python 3.11.15; PyTorch 2.13.0+cu130; DeepInverse 0.4.1
+golden_reference:
+  repository_path: golden.npz
+  format: numpy-npz
+  size_bytes: 11251
+  sha256: 2b709a7c16aedd65110aaf929bb2c6cc35db1c94d9fe01b751a29b06634d29af
+  input_keys: [input.kspace, input.mask]
+  output_keys: [output.reconstruction]
+  rtol: 0.001
+  atol: 0.001
+licenses:
+  code: BSD-3-Clause
+  weights: BSD-3-Clause at the pinned demo artifact revision
+  training_data_terms: The bundled checkpoint contains no patient image; no upstream training dataset is redistributed
+  redistribution_reviewed: true
+  reviewed_by: OpenMedVisionX maintainers
+  reviewed_on: "2026-07-21"
+  evidence_and_notice_paths:
+    - LICENSE.txt
+    - SOURCE_EVIDENCE.md
+    - NOTICE.md
+task_contract:
+  task: mri-reconstruction
+  modality_and_channel_order: [real, imaginary]
+  dimensionality: 2d
+  input_semantics: Simulated single-coil complex k-space plus a binary sampling mask, each represented as Bx2xHxW
+  spacing_orientation_intensity: Image-derived simulation in normalized image coordinates; not raw scanner k-space and no physical spacing is invented
+  labels_and_output_semantics: Two-channel complex reconstructed image plus an explicitly derived magnitude view
+  preprocessing_postprocessing: Orthonormal FFT; two HQS data-consistency steps with the reviewed shared two-layer DnCNN; magnitude is computed only for display
+resources:
+  cpu_supported: true
+  gpu_backend: PyTorch CUDA preferred with an explicit CPU fallback
+  tested_ram_vram: Validated on RTX 4060 Laptop 8 GiB and CPU for teaching-size 2D arrays
+  expected_runtime_cpu_gpu: Interactive on GPU and CPU for teaching-size arrays; elapsed time and fallback are visible
+intended_use: education-and-research-only
+training_domain_and_limitations: Minimal DeepInverse MRI-tour checkpoint for explaining undersampling and data consistency; not trained or validated as a clinical reconstruction system
+golden_tests:
+  - tests/test_bundled_models.py::test_packaged_cpu_golden_contract[deepinv-mri-modl]

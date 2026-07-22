@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools>=69", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,8 +7,9 @@ name = "openmedvisionx"
 version = "0.1.0"
 description = "An Open Interactive Platform for Medical Computer Vision Learning and Exploration"
 readme = "README.md"
-requires-python = ">=3.10"
-license = { file = "LICENSE" }
+requires-python = ">=3.11,<3.12"
+license = "MIT"
+license-files = ["LICENSE"]
 authors = [
   { name = "OpenMedVisionX contributors" },
 ]
@@ -23,17 +24,14 @@ keywords = [
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Intended Audience :: Education",
-  "License :: OSI Approved :: MIT License",
   "Operating System :: OS Independent",
   "Programming Language :: Python :: 3",
-  "Programming Language :: Python :: 3.10",
   "Programming Language :: Python :: 3.11",
-  "Programming Language :: Python :: 3.12",
   "Topic :: Education",
   "Topic :: Scientific/Engineering :: Medical Science Apps.",
 ]
 dependencies = [
-  "numpy>=1.26",
+  "numpy>=1.26,<2.2",
   "pydicom>=2.4",
   "Pillow>=10",
   "PyYAML>=6",
@@ -54,7 +52,7 @@ onnx = [
   "onnxruntime>=1.16",
 ]
 pytorch-plugin = [
-  "torch>=2.1",
+  "torch>=2.13,<2.14",
 ]
 llm = [
   "keyring>=24",
@@ -63,16 +61,16 @@ dev = [
   "build>=1.2",
   "detect-secrets>=1.5",
   "mypy>=1.10",
-  "pre-commit>=3.7",
   "pytest>=8",
   "pytest-cov>=5",
   "pytest-qt>=4.4",
   "ruff>=0.5",
   "twine>=5",
+  "types-PyYAML>=6.0",
 ]
 
 [project.scripts]
-openmedvisionx = "dicom_viewer.app:main"
+openmedvisionx = "workbench.app:main"
 
 [tool.setuptools]
 package-dir = { "" = "src" }
@@ -80,24 +78,28 @@ include-package-data = true
 
 [tool.setuptools.packages.find]
 where = ["src"]
-exclude = ["dicom_viewer.inference.tests*"]
+exclude = ["workbench.inference.tests*"]
 
 [tool.setuptools.package-data]
-"dicom_viewer" = ["py.typed"]
-"dicom_viewer.inference" = ["examples/*.yaml"]
+"workbench" = [
+  "py.typed",
+  "resources/model_bundles/**/*",
+  "resources/teaching_cases/**/*",
+]
+"workbench.inference" = ["examples/*.yaml"]
 
 [tool.setuptools.data-files]
 "share/openmedvisionx/figs" = ["figs/logo_pure.png", "figs/logo_full.png"]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
-addopts = "-ra --strict-markers --strict-config"
-testpaths = ["tests", "src/dicom_viewer/inference/tests"]
+addopts = "-ra --strict-markers --strict-config -p no:odl_plugins"
+testpaths = ["tests", "src/workbench/inference/tests"]
 qt_api = "pyqt5"
 
 [tool.coverage.run]
 branch = true
-source = ["dicom_viewer"]
+source = ["workbench"]
 
 [tool.coverage.report]
 show_missing = true
@@ -112,11 +114,11 @@ src = ["src", "tests"]
 select = ["E", "F", "I", "UP", "B", "SIM"]
 
 [tool.mypy]
-python_version = "3.10"
+python_version = "3.11"
 warn_unused_configs = true
 warn_redundant_casts = true
 warn_unused_ignores = true
 no_implicit_optional = true
 check_untyped_defs = true
-packages = ["dicom_viewer"]
+packages = ["workbench"]
 mypy_path = "src"

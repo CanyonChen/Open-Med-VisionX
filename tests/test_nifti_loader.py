@@ -11,12 +11,62 @@ try:
 except ImportError:  # pragma: no cover - skip in minimal environment
     nib = None
 
-from dicom_viewer.errors import ResourceLimitError
-from dicom_viewer.io import LoadLimits, NiftiLoader
+from workbench.domain import IntensitySemantics
+from workbench.errors import OperationCancelled, ResourceLimitError
+from workbench.io import LoadLimits, NiftiLoader, NiftiVolumeSelectionRequiredError
 
 
 @unittest.skipIf(nib is None, "nibabel is not installed")
 class NiftiLoaderTests(unittest.TestCase):
+    def test_4d_nifti_requires_explicit_volume_selection(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "dynamic.nii.gz"
+            xyzt = np.stack(
+                [
+                    np.full((2, 3, 4), 11, dtype=np.int16),
+                    np.full((2, 3, 4), 29, dtype=np.int16),
+                ],
+                axis=3,
+            )
+            nib.save(nib.Nifti1Image(xyzt, np.eye(4)), path)
+
+            with self.assertRaises(NiftiVolumeSelectionRequiredError) as context:
+                NiftiLoader().load(path)
+
+            self.assertEqual(context.exception.shape, (2, 3, 4, 2))
+            self.assertEqual(context.exception.volume_count, 2)
+
+    def test_4d_nifti_loads_only_the_explicit_selection(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "dynamic.nii"
+            xyzt = np.stack(
+                [
+                    np.full((2, 3, 4), 11, dtype=np.int16),
+                    np.full((2, 3, 4), 29, dtype=np.int16),
+                ],
+                axis=3,
+            )
+            nib.save(nib.Nifti1Image(xyzt, np.eye(4)), path)
+
+            volume = NiftiLoader().load(path, volume_index=1)
+
+            self.assertEqual(volume.shape, (4, 3, 2))
+            np.testing.assert_array_equal(volume.array, 29)
+            self.assertEqual(volume.runtime_metadata["source_shape"], (2, 3, 4, 2))
+            self.assertEqual(volume.runtime_metadata["selected_volume_index"], 1)
+            self.assertEqual(
+                volume.runtime_metadata["volume_selection"],
+                "explicit-user-selection",
+            )
+
+    def test_volume_index_is_rejected_for_3d_nifti(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "volume.nii"
+            nib.save(nib.Nifti1Image(np.zeros((2, 3, 4)), np.eye(4)), path)
+
+            with self.assertRaisesRegex(ValueError, "only with a 4-D"):
+                NiftiLoader().load(path, volume_index=0)
+
     def test_runtime_generated_nifti_is_canonical_ras(self) -> None:
         with TemporaryDirectory() as directory:
             path = Path(directory) / "volume.nii.gz"
@@ -28,6 +78,27 @@ class NiftiLoaderTests(unittest.TestCase):
             self.assertGreater(volume.affine[0, 0], 0)
             self.assertGreater(volume.affine[1, 1], 0)
             np.testing.assert_allclose(volume.spacing, (0.5, 0.75, 2.0))
+            self.assertEqual(volume.modality, "UNKNOWN")
+            self.assertEqual(volume.intensity_semantics, IntensitySemantics.UNKNOWN)
+            self.assertFalse(volume.has_explicit_quantitative_semantics)
+
+    def test_explicit_nifti_semantics_are_recorded_without_container_inference(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "probability.nii"
+            nib.save(nib.Nifti1Image(np.zeros((3, 4, 5)), np.eye(4)), path)
+
+            volume = NiftiLoader().load(
+                path,
+                modality="MR",
+                intensity_semantics=IntensitySemantics.PROBABILITY,
+            )
+
+            self.assertEqual(volume.modality, "MR")
+            self.assertEqual(volume.intensity_semantics, IntensitySemantics.PROBABILITY)
+            self.assertEqual(
+                volume.runtime_metadata["intensity_semantics_source"],
+                "user_declared",
+            )
 
     def test_uncompressed_nifti_with_gzip_suffix_loads_by_signature(self) -> None:
         with TemporaryDirectory() as directory:
@@ -54,6 +125,20 @@ class NiftiLoaderTests(unittest.TestCase):
             nib.save(image, path)
             with self.assertRaisesRegex(ResourceLimitError, "decoded bytes"):
                 NiftiLoader().load(path, limits=LoadLimits(max_decoded_bytes=100))
+
+    def test_cancellation_during_proxy_preflight_is_not_wrapped_as_decode_failure(self) -> None:
+        with TemporaryDirectory() as directory:
+            path = Path(directory) / "volume.nii"
+            nib.save(nib.Nifti1Image(np.zeros((3, 4, 5)), np.eye(4)), path)
+            calls = 0
+
+            def cancel_after_preflight() -> bool:
+                nonlocal calls
+                calls += 1
+                return calls >= 2
+
+            with self.assertRaises(OperationCancelled):
+                NiftiLoader().load(path, cancel=cancel_after_preflight)
 
 
 if __name__ == "__main__":

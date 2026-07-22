@@ -9,15 +9,15 @@ import numpy as np
 import pytest
 from PIL import Image
 
-from dicom_viewer.domain import AlphaSemantics, ColorSpace
-from dicom_viewer.errors import (
+from workbench.domain import AlphaSemantics, ColorSpace
+from workbench.errors import (
     DecodeError,
     FormatMismatchError,
     OperationCancelled,
     ResourceLimitError,
 )
-from dicom_viewer.io import LoadLimits, RasterImageLoader, RasterTileCache, RasterTileSource
-from dicom_viewer.services import ImageService
+from workbench.io import LoadLimits, RasterImageLoader, RasterTileCache, RasterTileSource
+from workbench.services import ImageService
 
 
 def _write_multipage_tiff(path: Path, arrays: list[np.ndarray]) -> None:

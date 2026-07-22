@@ -9,9 +9,9 @@ from tempfile import TemporaryDirectory
 
 import numpy as np
 
-from dicom_viewer.domain import IntensitySemantics
-from dicom_viewer.errors import ResourceLimitError
-from dicom_viewer.io import DicomLoader, NiftiLoader
+from workbench.domain import IntensitySemantics
+from workbench.errors import ResourceLimitError
+from workbench.io import DicomLoader, NiftiLoader
 
 HAS_PYDICOM = importlib.util.find_spec("pydicom") is not None
 HAS_NIBABEL = importlib.util.find_spec("nibabel") is not None
